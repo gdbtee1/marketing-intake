@@ -13,13 +13,55 @@ function LaunchStep({
 }) {
   const [submitted, setSubmitted] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
-    console.log('Marketing Intake Submission:', formData)
+    const payload = new FormData()
 
-    setSubmitted(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    Object.entries(formData).forEach(([key, value]) => {
+      payload.append(
+        key,
+        Array.isArray(value) ? value.join(', ') : value
+      )
+    })
+
+    payload.append(
+      '_subject',
+      `New Techuvo Marketing Intake — ${formData.businessName || 'New Lead'}`
+    )
+
+    payload.append('_captcha', 'false')
+    payload.append('_template', 'table')
+
+    const fileInput = document.getElementById('marketing-assets')
+
+    if (fileInput?.files?.length) {
+      Array.from(fileInput.files).forEach((file) => {
+        payload.append('attachment', file)
+      })
+    }
+
+    try {
+      const response = await fetch(
+        'https://formsubmit.co/ajax/techuvodesign@gmail.com',
+        {
+          method: 'POST',
+          body: payload,
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Submission failed')
+      }
+
+      setSubmitted(true)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (error) {
+      console.error(error)
+      alert(
+        'Something went wrong while sending your marketing brief. Please try again.'
+      )
+    }
   }
 
   if (submitted) {
@@ -52,8 +94,8 @@ function LaunchStep({
           </h2>
 
           <p>
-            Techuvo will use your answers to better understand what should
-            be promoted, who should see it, and what the campaign needs to
+            Techuvo will use your answers to understand what should be
+            promoted, who should see it, and what the campaign needs to
             accomplish.
           </p>
         </div>
@@ -107,6 +149,7 @@ function LaunchStep({
             </span>
 
             <input
+              id="marketing-assets"
               type="file"
               multiple
               accept="image/*,video/*,.pdf,.doc,.docx"
